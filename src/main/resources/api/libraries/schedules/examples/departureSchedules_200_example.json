@@ -1,0 +1,15 @@
+[
+  {
+    "companyName": "TravelOnTip",
+    "availableSeats": 20,
+    "departureDateTime": "2019-04-30T16:41:41",
+    "travelRoute": {
+      "destinationLocation": {
+        "locationDesc": "Klang Malaysia"
+      },
+      "originLocation": {
+        "locationDesc": "Buena Vista Singapore"
+      }
+    }
+  }
+]

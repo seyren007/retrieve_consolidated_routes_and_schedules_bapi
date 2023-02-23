@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	
+	<sub-flow name="getRoutes-implementationSub_Flow" doc:id="e8f3d279-a43b-4ce4-bf1d-3d5507a0a34b" >
+		<set-variable value="Routes" doc:name="Resources" doc:id="ce74acb1-f019-43ef-82a2-7c0adc2b89a5" variableName="resources"/>
+		<choice doc:name="Choice" doc:id="5aca1f4a-0f39-4fb3-bd7b-433a7763fc3a" >
+			<when expression="#[vars.transportCompany == 'TravelOnTip']">
+				<flow-ref doc:name="Travel On Tip" doc:id="38e70471-65f1-4d86-93f4-ad257af8ae64" name="getRoutes-travelOnTip" />
+			</when>
+			<when expression="#[vars.transportCompany == 'FastGo']" >
+				<flow-ref doc:name="Fast Go" doc:id="cf431080-259f-4de5-8f16-9462978137f4" name="getRoutes-fastGo"/>
+			</when>
+			<otherwise >
+				<scatter-gather doc:name="Scatter-Gather" doc:id="62891714-b26d-4a36-9051-5ca72aeb3757" >
+					<route >
+						<set-variable value="FastGo" doc:name="Transport Company" doc:id="3632f1d6-3f56-4d7d-a614-947cf1b25f68" variableName="transportCompany"/>
+						<flow-ref doc:name="Fast Go" doc:id="b43a947c-af72-4cd8-9b11-4d4962384c04" name="getRoutes-fastGo" />
+					</route>
+					<route >
+						<set-variable value="TravelOnTip" doc:name="Transport Company" doc:id="96a95b2d-51d7-493b-ab45-c046183f1be3" variableName="transportCompany"/>
+						<flow-ref doc:name="Travel On Tip" doc:id="a4be53ae-771a-42dc-a407-f73846416f96" name="getRoutes-travelOnTip" />
+					</route>
+				</scatter-gather>
+				<set-payload value="#[%dw 2.0&#10;output application/json&#10;---&#10;(payload.'0'.payload default []) ++ (payload.'1'.payload default [])]" doc:name="Set Payload" doc:id="0647e9f6-a226-4de0-abbc-6156a9336cce" />
+			</otherwise>
+		</choice>
+	</sub-flow>
+	<sub-flow name="getRoutes-fastGo" doc:id="20c98727-1cf2-4646-8706-398c3535980d" >
+		<set-variable value="#[&quot;/api/&quot; ++ (vars.transportType default &quot;Bus&quot;) ++ p('http.requester.fastGo.routes_path')]" doc:name="Resource Path" doc:id="ba138b8f-c506-4a64-a16c-cb048f40e1bd" variableName="resourcePath" />
+		<ee:cache doc:name="Cache" doc:id="7c8bc69c-648f-4913-990c-3fec2c1438ae" cachingStrategy-ref="Caching_Strategy" >
+			<http:request method="GET" doc:name="Request" doc:id="6b054dfa-bb0f-42ec-9167-4ac5c94c853a" config-ref="HTTP_Request_configuration_fastGo_SAPI" path="#[vars.resourcePath]" >
+				<http:headers ><![CDATA[#[output application/java
+---
+{
+	"transactionId" : vars.transactionId
+}]]]></http:headers>
+			</http:request>
+			<ee:transform doc:name="Transform Message" doc:id="3dd4aab7-f860-40b0-8879-dec9b6daa9e8" >
+				<ee:message >
+					<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+var locationMapping = (readUrl("classpath://json/locationCodeMapping.json", "application/json"))	
+---
+payload map(value, index) -> {
+    "companyCode": "FastGo",
+    "originLocation": {
+	  "locationCode": value.departureLocationCode,
+      "locationDesc": (locationMapping filter($.locationCode == value.departureLocationCode))[0].locationDesc
+    },
+    "destinationLocation": {
+	  "locationCode": value.arrivalLocationCode,
+      "locationDesc": (locationMapping filter($.locationCode == value.arrivalLocationCode))[0].locationDesc
+    }
+}]]></ee:set-payload>
+				</ee:message>
+			</ee:transform>
+		</ee:cache>
+	</sub-flow>
+	<sub-flow name="getRoutes-travelOnTip" doc:id="91fc9b0f-686b-44ad-a163-456d0e7fe5d1" >
+		<set-variable value="#[&quot;/api/&quot; ++ (vars.transportType default &quot;Bus&quot;) ++ p('http.requester.travelOnTip.routes_path')]" doc:name="Resource Path" doc:id="6a840eb0-2fc5-4d94-8ec5-051990cd6812" variableName="resourcePath" />
+		<ee:cache doc:name="Cache" doc:id="b7007bdc-2446-422a-bf1f-65bef0438097" cachingStrategy-ref="Caching_Strategy" >
+			<http:request method="GET" doc:name="Request" doc:id="a6c3bc09-a6c7-443a-8f22-2f70630fbeb2" config-ref="HTTP_Request_configuration_travelOnTip_SAPI" path="#[vars.resourcePath]" >
+				<http:headers ><![CDATA[#[output application/java
+---
+{
+	"transactionId" : vars.transactionId
+}]]]></http:headers>
+			</http:request>
+			<ee:transform doc:name="Transform Message" doc:id="aa82faac-7ad7-45c1-837e-8b3aa85af690" >
+				<ee:message >
+					<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+var locationMapping = (readUrl("classpath://json/locationCodeMapping.json", "application/json"))
+---
+payload map(value, index) -> {
+    "companyCode": "TravelOnTip",
+    "originLocation": {
+	  "locationCode": value.originLocation.locationCode,
+      "locationDesc": (locationMapping filter($.locationCode == value.originLocation.locationCode))[0].locationDesc
+    },
+    "destinationLocation": {
+	  "locationCode": value.destinationLocation.locationCode,
+      "locationDesc": (locationMapping filter($.locationCode == value.destinationLocation.locationCode))[0].locationDesc
+    }
+}]]></ee:set-payload>
+				</ee:message>
+			</ee:transform>
+		</ee:cache>
+	</sub-flow>
+</mule>

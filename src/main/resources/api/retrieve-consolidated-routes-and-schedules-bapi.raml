@@ -1,0 +1,73 @@
+#%RAML 1.0
+title: Retrieve_Consolidated_Routes_And_Schedules_BAPI
+description: Retrieves consolidated routes and schedules for Process API
+
+uses:
+  common: /libraries/common/commonBusiness_library.raml
+  routes: /libraries/routes/commonBusiness_library.raml
+  schedules: /libraries/schedules/commonBusiness_library.raml
+
+/booking:
+  /{transportType}:
+    /routes:
+      get:
+        description: This method retrieves all the booking data
+        is:
+          - common.header_transactionId
+          - common.queryParam_companyName
+          - common.queryParam_departureLocation
+          - common.queryParam_departureDestination
+        responses:
+          200:
+            description: A data is retrievable
+            body:
+              application/json:
+                type: routes.getRoutes_200_dataType
+                example: !include /libraries/routes/examples/getRoutes_200_example.json
+          400:
+            body:
+              application/json:
+                type: common.400_response_dataType
+                example: !include /libraries/common/examples/400_response_example.json
+          404:
+            body:
+              application/json:
+                type: common.404_response_dataType
+                example: !include /libraries/common/examples/404_response_example.json
+          500:
+            body:
+              application/json:
+                type: common.500_response_dataType
+                example: !include /libraries/common/examples/500_response_example.json
+
+    /schedules:
+      get:
+        description: This method retrieves all the booking data
+        is:
+          - common.header_transactionId
+          - common.queryParam_companyName
+          - common.queryParam_departureLocation
+          - common.queryParam_departureDestination
+          - common.queryParam_requestTimezone
+        responses:
+          200:
+            description: A data is retrievable
+            body:
+              application/json:
+                type: schedules.getSchedules_200_dataType
+                example: !include /libraries/schedules/examples/departureSchedules_200_example.json
+          400:
+            body:
+              application/json:
+                type: common.400_response_dataType
+                example: !include /libraries/common/examples/400_response_example.json
+          404:
+            body:
+              application/json:
+                type: common.404_response_dataType
+                example: !include /libraries/common/examples/404_response_example.json
+          500:
+            body:
+              application/json:
+                type: common.500_response_dataType
+                example: !include /libraries/common/examples/500_response_example.json
